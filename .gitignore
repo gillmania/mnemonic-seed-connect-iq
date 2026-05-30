@@ -1,0 +1,14 @@
+# Generated build output
+/bin/
+*.iq
+
+# Developer signing key — never commit
+developer_key.der
+developer_key.pem
+*.der
+
+# Backup files
+*.bak
+
+# Internal dev guidance (Claude Code) — not for public consumers
+CLAUDE.md

@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 70 70" width="70" height="70">
+  <!-- Black background circle — safe area for round watch faces -->
+  <circle cx="35" cy="35" r="35" fill="#000000"/>
+
+  <!-- Die face: rounded square, left-center -->
+  <rect x="8" y="18" width="34" height="34" rx="6" ry="6" fill="#1a1a1a" stroke="#ffffff" stroke-width="2.5"/>
+
+  <!-- Die dots — pattern for face showing 5 -->
+  <!-- top-left -->
+  <circle cx="18" cy="27" r="3" fill="#ffffff"/>
+  <!-- top-right -->
+  <circle cx="32" cy="27" r="3" fill="#ffffff"/>
+  <!-- center -->
+  <circle cx="25" cy="35" r="3" fill="#ffffff"/>
+  <!-- bottom-left -->
+  <circle cx="18" cy="43" r="3" fill="#ffffff"/>
+  <!-- bottom-right -->
+  <circle cx="32" cy="43" r="3" fill="#ffffff"/>
+
+  <!-- Key: shaft + two teeth, angled, overlapping die at lower-right -->
+  <g transform="rotate(-40, 47, 44)">
+    <!-- Key bow (circle) -->
+    <circle cx="47" cy="23" r="8" fill="none" stroke="#ffffff" stroke-width="3"/>
+    <circle cx="47" cy="23" r="4" fill="#000000"/>
+    <!-- Key shaft -->
+    <rect x="45.5" y="29" width="3" height="22" rx="1.5" fill="#ffffff"/>
+    <!-- Key teeth -->
+    <rect x="48.5" y="43" width="5" height="3" rx="1" fill="#ffffff"/>
+    <rect x="48.5" y="37" width="4" height="3" rx="1" fill="#ffffff"/>
+  </g>
+</svg>

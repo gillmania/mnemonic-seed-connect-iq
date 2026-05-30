@@ -125,7 +125,7 @@ test vectors, including checksum generation and 11-bit word-index packing.
 ## Install
 
 **Option 1 — Download pre-built release**
-Download `BTCSeed.iq` from the [latest release](https://github.com/gillmania/mnemonic-seed/releases/latest)
+Download `BTCSeed.iq` from the [latest release](https://github.com/gillmania/mnemonic-seed-connect-iq/releases/latest)
 and sideload via Garmin Express or the Connect IQ phone app.
 
 **Option 2 — Connect IQ Store**

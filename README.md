@@ -64,8 +64,11 @@ by your wallet software.
 
 ## Supported devices
 
-The app has been tested and compiled for 56 Garmin devices running Connect IQ
-API 5.1.0 or later.
+The app has been built for 56 Garmin devices running Connect IQ API 5.1.0 or
+later. Button hints and layouts are device-agnostic (text legend at bottom of
+screen) so the UI is usable on round 5-button watches, 3-button+touch models
+(Venu/Vivoactive), rectangular Edge/Approach computers, and small-screen
+Instinct/Forerunner variants. Full list below.
 
 Forerunner: fr165, fr165m, fr255, fr255m, fr255s, fr255sm, fr265, fr265s,
 fr570 42mm, fr570 47mm, fr955, fr965, fr970

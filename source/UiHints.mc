@@ -1,71 +1,86 @@
 import Toybox.Graphics;
 import Toybox.Lang;
-import Toybox.Math;
 
-// Draws short action labels at each physical button's position along the round
-// bezel, so the hints follow the watch's circle and sit next to the button that
-// triggers them. Angles match the fr955 / 5-button Forerunner layout:
-// START/STOP upper-right, BACK lower-right, UP mid-left, DOWN lower-left
-// (LIGHT, upper-left, is reserved by the system). Text is kept upright (readable
-// on small screens) and inset from the rim so it is never clipped on round,
-// square or touch displays.
+// Device-agnostic action hints. Draws a compact text legend near the bottom of
+// the screen with BACK / UP/DN / START labels (when provided) plus optional
+// ▲/▼ scroll indicators. This works on every supported form factor:
+// - Classic 5-button round watches (fr955, fenix, epix...)
+// - 3-button + touch watches (venu3, vivoactive...)
+// - Rectangular bike/golf computers (edge*, approach*)
+// - Small screens (fr165, instinct e, descent...)
+// No assumptions about button physical positions or round bezel angles.
 //
 // hints Dictionary keys (all optional):
-//   :start, :back, :up, :down  -> String label
-//   :upArrow, :downArrow        -> true to draw a scroll triangle at UP/DOWN
+//   :start, :back, :up, :down  -> String label (e.g. "add", "undo", "+10 throws")
+//   :upArrow, :downArrow        -> true to draw ▲ / ▼ scroll triangles
 module UiHints {
 
-    // Degrees counter-clockwise from the 3 o'clock position.
-    const A_START = 42;
-    const A_BACK  = -42;
-    const A_UP    = 178;
-    const A_DOWN  = 216;
-
     function draw(dc as Graphics.Dc, hints as Dictionary) as Void {
-        var cx = dc.getWidth() / 2.0;
-        var cy = dc.getHeight() / 2.0;
-        var r = (cx < cy ? cx : cy) * 0.86;
+        var w = dc.getWidth();
+        var h = dc.getHeight();
+        var font = Graphics.FONT_XTINY;
+        var gray = Graphics.COLOR_LT_GRAY;
 
-        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.setColor(gray, Graphics.COLOR_TRANSPARENT);
 
-        if (hints.hasKey(:start)) { label(dc, cx, cy, r, A_START, hints[:start] as String); }
-        if (hints.hasKey(:back))  { label(dc, cx, cy, r, A_BACK,  hints[:back] as String); }
-        if (hints.hasKey(:up))    { label(dc, cx, cy, r, A_UP,    hints[:up] as String); }
-        if (hints.hasKey(:down))  { label(dc, cx, cy, r, A_DOWN,  hints[:down] as String); }
+        var hintY = h - (h * 0.09).toNumber();
+        if (hintY < 12) { hintY = 12; }
 
-        var s = (dc.getWidth() * 0.035).toNumber();
-        if (s < 5) { s = 5; }
-        if (hints.hasKey(:upArrow) && hints[:upArrow]) {
-            triangleAt(dc, cx, cy, r, A_UP, s, true);
+        var leftX = (w * 0.10).toNumber();
+        var centerX = w / 2;
+        var rightX = (w * 0.90).toNumber();
+
+        var hasBack = hints.hasKey(:back);
+        var hasUp = hints.hasKey(:up);
+        var hasDown = hints.hasKey(:down);
+        var hasStart = hints.hasKey(:start);
+        var hasUpArrow = hints.hasKey(:upArrow) && hints[:upArrow];
+        var hasDownArrow = hints.hasKey(:downArrow) && hints[:downArrow];
+
+        // Action labels in three zones (left / center / right) to stay readable
+        // even when screen is narrow or very short.
+        if (hasBack || hasUp || hasDown || hasStart) {
+            if (hasBack) {
+                var s = hints[:back] as String;
+                dc.drawText(leftX, hintY, font, s + " BACK",
+                    Graphics.TEXT_JUSTIFY_LEFT | Graphics.TEXT_JUSTIFY_VCENTER);
+            }
+            if (hasStart) {
+                var s = hints[:start] as String;
+                dc.drawText(rightX, hintY, font, "START " + s,
+                    Graphics.TEXT_JUSTIFY_RIGHT | Graphics.TEXT_JUSTIFY_VCENTER);
+            }
+            if (hasUp || hasDown) {
+                var label = "";
+                if (hasUp) { label += (hints[:up] as String) + " "; }
+                if (hasDown) { label += (hints[:down] as String); }
+                if (label.length() > 0) {
+                    label += " UP/DN";
+                    dc.drawText(centerX, hintY, font, label,
+                        Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+                }
+            }
         }
-        if (hints.hasKey(:downArrow) && hints[:downArrow]) {
-            triangleAt(dc, cx, cy, r, A_DOWN, s, false);
+
+        // Scroll arrows (used on word-list pages and info). Drawn above the
+        // text line so they don't collide with labels.
+        if (hasUpArrow || hasDownArrow) {
+            var arrSize = (w * 0.028).toNumber();
+            if (arrSize < 4) { arrSize = 4; }
+            var arrY = hintY - (h * 0.055).toNumber();
+            if (hasUpArrow) {
+                var pts = [[centerX, arrY - arrSize],
+                           [centerX - arrSize, arrY + arrSize],
+                           [centerX + arrSize, arrY + arrSize]];
+                dc.fillPolygon(pts);
+            }
+            if (hasDownArrow) {
+                var dY = arrY + (hasUpArrow ? arrSize * 2 + 3 : 0);
+                var pts = [[centerX, dY + arrSize],
+                           [centerX - arrSize, dY - arrSize],
+                           [centerX + arrSize, dY - arrSize]];
+                dc.fillPolygon(pts);
+            }
         }
-    }
-
-    function pointAt(cx as Float, cy as Float, r as Float, angleDeg as Number) as [Float, Float] {
-        var rad = angleDeg * Math.PI / 180.0;
-        return [cx + r * Math.cos(rad), cy - r * Math.sin(rad)];
-    }
-
-    function label(dc as Graphics.Dc, cx as Float, cy as Float, r as Float, angleDeg as Number, text as String) as Void {
-        var p = pointAt(cx, cy, r, angleDeg);
-        // Justify the text inward (away from the rim) based on which side it's on.
-        var justify = (p[0] >= cx) ? Graphics.TEXT_JUSTIFY_RIGHT : Graphics.TEXT_JUSTIFY_LEFT;
-        dc.drawText(p[0].toNumber(), p[1].toNumber(), Graphics.FONT_XTINY, text,
-            justify | Graphics.TEXT_JUSTIFY_VCENTER);
-    }
-
-    function triangleAt(dc as Graphics.Dc, cx as Float, cy as Float, r as Float, angleDeg as Number, s as Number, up as Boolean) as Void {
-        var p = pointAt(cx, cy, r, angleDeg);
-        var x = p[0].toNumber();
-        var y = p[1].toNumber();
-        var pts;
-        if (up) {
-            pts = [[x, y - s], [x - s, y + s], [x + s, y + s]];
-        } else {
-            pts = [[x, y + s], [x - s, y - s], [x + s, y - s]];
-        }
-        dc.fillPolygon(pts);
     }
 }

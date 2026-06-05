@@ -23,7 +23,7 @@ class MainMenuDelegate extends WatchUi.Menu2InputDelegate {
     }
 }
 
-// Picks entropy strength, then opens the dice entry view. Item id is the bit count.
+// Picks entropy strength, then lets the user choose dice or motion.
 class StrengthMenuDelegate extends WatchUi.Menu2InputDelegate {
 
     function initialize() {
@@ -32,7 +32,30 @@ class StrengthMenuDelegate extends WatchUi.Menu2InputDelegate {
 
     function onSelect(item as WatchUi.MenuItem) as Void {
         var strengthBits = item.getId() as Number;
-        var view = new DiceEntryView(strengthBits);
-        WatchUi.pushView(view, new DiceEntryDelegate(view), WatchUi.SLIDE_UP);
+        var menu = new WatchUi.Menu2({:title => "Entropy source"});
+        menu.addItem(new WatchUi.MenuItem("Dice rolls", "50 or 100 throws", :dice, null));
+        menu.addItem(new WatchUi.MenuItem("Shake watch", "move for ~5 sec", :motion, null));
+        WatchUi.pushView(menu, new MethodMenuDelegate(strengthBits), WatchUi.SLIDE_UP);
+    }
+}
+
+// Launches the chosen entropy entry view with the selected strength.
+class MethodMenuDelegate extends WatchUi.Menu2InputDelegate {
+
+    private var _strengthBits as Number;
+
+    function initialize(strengthBits as Number) {
+        Menu2InputDelegate.initialize();
+        _strengthBits = strengthBits;
+    }
+
+    function onSelect(item as WatchUi.MenuItem) as Void {
+        if (item.getId() == :dice) {
+            var view = new DiceEntryView(_strengthBits);
+            WatchUi.pushView(view, new DiceEntryDelegate(view), WatchUi.SLIDE_UP);
+        } else {
+            var view = new MotionEntryView(_strengthBits);
+            WatchUi.pushView(view, new MotionEntryDelegate(view), WatchUi.SLIDE_UP);
+        }
     }
 }

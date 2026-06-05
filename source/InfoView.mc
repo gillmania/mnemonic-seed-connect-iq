@@ -9,9 +9,9 @@ class InfoView extends WatchUi.View {
     // Each page is a [title, line, line, ...]. Kept short to fit small screens.
     private var _pages as Array<Array<String>> = [
         ["How it works",
-            "Roll a real die",
-            "and enter each",
-            "result (1-6).",
+            "Tap a die on",
+            "screen or shake",
+            "the watch.",
             "Get a BIP-39 seed",
             "of 12 or 24 words."],
         ["Dice + chance",
@@ -55,7 +55,13 @@ class InfoView extends WatchUi.View {
             "Electrum seed. Add",
             "it via Options ->",
             "BIP39 seed (the",
-            "warning is normal)."]
+            "warning is normal)."],
+        ["Garmin watches",
+            "Fenix 7/8, Epix 2,",
+            "Forerunner 255+,",
+            "Venu 3, Vivoactive",
+            "5/6, Instinct 3,",
+            "MARQ 2 and more."]
     ];
     private var _page as Number = 0;
 
@@ -94,11 +100,18 @@ class InfoView extends WatchUi.View {
             y += step;
         }
 
-        var hints = {} as Dictionary;
-        if (_page > 0) { hints[:upArrow] = true; }
-        if (_page < _pages.size() - 1) { hints[:downArrow] = true; }
-        hints[:back] = "close";
-        UiHints.draw(dc, hints);
+        var s = (w * 0.035).toNumber();
+        if (s < 5) { s = 5; }
+        var cx = w / 2;
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        if (_page > 0) {
+            var ay = (h * 0.04).toNumber();
+            dc.fillPolygon([[cx, ay - s], [cx - s, ay + s], [cx + s, ay + s]]);
+        }
+        if (_page < _pages.size() - 1) {
+            var ay = (h * 0.96).toNumber();
+            dc.fillPolygon([[cx, ay + s], [cx - s, ay - s], [cx + s, ay - s]]);
+        }
     }
 }
 

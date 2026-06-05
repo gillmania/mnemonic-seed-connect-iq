@@ -1,10 +1,12 @@
 import Toybox.Graphics;
 import Toybox.WatchUi;
 import Toybox.Lang;
+import Toybox.Math;
 
-// Collects physical d6 rolls from the user. The candidate value (1-6) is changed
-// with UP/DOWN (page buttons / swipes) and committed with SELECT (start / tap).
-// When enough rolls are collected, the rolls string is handed to Bip39.mixEntropy.
+// Collects physical d6 rolls. A 3×2 grid of dice faces is shown; the selected
+// die (highlighted white) is committed with START. UP/DOWN cycle the selection.
+// On touch screens the user can tap a die to commit it directly.
+// BACK undoes the last roll; when no rolls exist it returns false (natural pop).
 class DiceEntryView extends WatchUi.View {
 
     // Set > 0 only to shorten dice entry while testing the UI in the simulator;
@@ -14,7 +16,13 @@ class DiceEntryView extends WatchUi.View {
     private var _strengthBits as Number;
     private var _needed as Number;
     private var _rolls as String = "";
-    private var _candidate as Number = 1;
+    private var _selectedValue as Number = 1;
+
+    // Grid geometry computed each frame and cached for hit-testing.
+    private var _dieSize as Number = 0;
+    private var _gap as Number = 0;
+    private var _gridX as Number = 0;
+    private var _gridY as Number = 0;
 
     function initialize(strengthBits as Number) {
         View.initialize();
@@ -27,19 +35,34 @@ class DiceEntryView extends WatchUi.View {
     function getCount() as Number { return _rolls.length(); }
     function isComplete() as Boolean { return _rolls.length() >= _needed; }
 
-    function incCandidate() as Void {
-        _candidate = (_candidate % 6) + 1;
+    function reset() as Void {
+        _rolls = "";
+        _selectedValue = 1;
         WatchUi.requestUpdate();
     }
 
-    function decCandidate() as Void {
-        _candidate = (_candidate <= 1) ? 6 : _candidate - 1;
+    function incSelected() as Void {
+        _selectedValue = (_selectedValue % 6) + 1;
+        WatchUi.requestUpdate();
+    }
+
+    function decSelected() as Void {
+        _selectedValue = (_selectedValue <= 1) ? 6 : _selectedValue - 1;
         WatchUi.requestUpdate();
     }
 
     function commit() as Void {
         if (_rolls.length() < _needed) {
-            _rolls += _candidate.toString();
+            _rolls += _selectedValue.toString();
+            WatchUi.requestUpdate();
+        }
+    }
+
+    // Select and immediately commit a specific value (used by touch handler).
+    function commitValue(value as Number) as Void {
+        _selectedValue = value;
+        if (_rolls.length() < _needed) {
+            _rolls += value.toString();
             WatchUi.requestUpdate();
         }
     }
@@ -52,42 +75,132 @@ class DiceEntryView extends WatchUi.View {
         }
     }
 
-    // Raise the target so the user can append more rolls ("add throws"); the
-    // longer roll string is then re-mixed into a fresh, independent seed.
-    function extend(additional as Number) as Void {
-        _needed += additional;
-        WatchUi.requestUpdate();
+    // Returns the die value (1-6) under the tap coordinates, or 0 if none.
+    function dieValueAt(tapX as Number, tapY as Number) as Number {
+        if (_dieSize == 0) { return 0; }
+        for (var row = 0; row < 2; row++) {
+            for (var col = 0; col < 3; col++) {
+                var dx = _gridX + col * (_dieSize + _gap);
+                var dy = _gridY + row * (_dieSize + _gap);
+                if (tapX >= dx && tapX < dx + _dieSize &&
+                    tapY >= dy && tapY < dy + _dieSize) {
+                    return row * 3 + col + 1;
+                }
+            }
+        }
+        return 0;
     }
 
-    function onUpdate(dc as Dc) as Void {
+    private function drawDots(dc as Graphics.Dc, cx as Number, cy as Number, spread as Number, dotR as Number, value as Number) as Void {
+        if (value == 1) {
+            dc.fillCircle(cx, cy, dotR);
+        } else if (value == 2) {
+            dc.fillCircle(cx - spread, cy - spread, dotR);
+            dc.fillCircle(cx + spread, cy + spread, dotR);
+        } else if (value == 3) {
+            dc.fillCircle(cx - spread, cy - spread, dotR);
+            dc.fillCircle(cx, cy, dotR);
+            dc.fillCircle(cx + spread, cy + spread, dotR);
+        } else if (value == 4) {
+            dc.fillCircle(cx - spread, cy - spread, dotR);
+            dc.fillCircle(cx + spread, cy - spread, dotR);
+            dc.fillCircle(cx - spread, cy + spread, dotR);
+            dc.fillCircle(cx + spread, cy + spread, dotR);
+        } else if (value == 5) {
+            dc.fillCircle(cx - spread, cy - spread, dotR);
+            dc.fillCircle(cx + spread, cy - spread, dotR);
+            dc.fillCircle(cx, cy, dotR);
+            dc.fillCircle(cx - spread, cy + spread, dotR);
+            dc.fillCircle(cx + spread, cy + spread, dotR);
+        } else {
+            dc.fillCircle(cx - spread, cy - spread, dotR);
+            dc.fillCircle(cx + spread, cy - spread, dotR);
+            dc.fillCircle(cx - spread, cy, dotR);
+            dc.fillCircle(cx + spread, cy, dotR);
+            dc.fillCircle(cx - spread, cy + spread, dotR);
+            dc.fillCircle(cx + spread, cy + spread, dotR);
+        }
+    }
+
+    private function drawDie(dc as Graphics.Dc, x as Number, y as Number, value as Number, selected as Boolean) as Void {
+        var s = _dieSize;
+        var cornerR = (s * 0.16).toNumber();
+        if (cornerR < 3) { cornerR = 3; }
+
+        if (selected) {
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        } else {
+            dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
+        }
+        dc.fillRoundedRectangle(x, y, s, s, cornerR);
+
+        var dotR = (s * 0.10).toNumber();
+        if (dotR < 2) { dotR = 2; }
+        var spread = (s * 0.28).toNumber();
+        var cx = x + s / 2;
+        var cy = y + s / 2;
+
+        if (selected) {
+            dc.setColor(Graphics.COLOR_BLACK, Graphics.COLOR_TRANSPARENT);
+        } else {
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+        }
+        drawDots(dc, cx, cy, spread, dotR, value);
+    }
+
+    function onUpdate(dc as Graphics.Dc) as Void {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_BLACK);
         dc.clear();
         var w = dc.getWidth();
         var h = dc.getHeight();
 
-        dc.drawText(w / 2, (h * 0.16).toNumber(), Graphics.FONT_SMALL,
-            "Roll " + _rolls.length() + " / " + _needed,
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        // Smaller dice so the grid breathes and the bottom bar fits.
+        _dieSize = (w * 0.23).toNumber();
+        _gap = (w * 0.04).toNumber();
+        if (_gap < 4) { _gap = 4; }
+        var gridW = 3 * _dieSize + 2 * _gap;
+        var gridH = 2 * _dieSize + _gap;
+        _gridX = (w - gridW) / 2;
+        // On round screens the top corners of the grid get clipped if gridY is too small.
+        // Safe minimum: for a grid of width gridW centred in a circle of radius w/2, the
+        // top corners must sit inside the circle → gridY > w/2 - sqrt((w/2)²-(gridW/2)²).
+        var r = w / 2;
+        var halfGridW = gridW / 2;
+        var safeMinY = (r - Math.sqrt((r * r - halfGridW * halfGridW).toFloat())).toNumber() + 4;
+        var centredY = ((h * 0.78).toNumber() - gridH) / 2;
+        _gridY = (centredY > safeMinY) ? centredY : safeMinY;
 
-        dc.drawText(w / 2, (h * 0.42).toNumber(), Graphics.FONT_NUMBER_MEDIUM,
-            _candidate.toString(),
-            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        // 3×2 dice grid.
+        for (var row = 0; row < 2; row++) {
+            for (var col = 0; col < 3; col++) {
+                var value = row * 3 + col + 1;
+                var dx = _gridX + col * (_dieSize + _gap);
+                var dy = _gridY + row * (_dieSize + _gap);
+                drawDie(dc, dx, dy, value, value == _selectedValue);
+            }
+        }
 
-        // progress bar
-        var barW = (w * 0.6).toNumber();
+        // Progress bar — wider and taller so it's visible even at 1 roll.
+        var barW = (w * 0.72).toNumber();
         var barX = (w - barW) / 2;
-        var barY = (h * 0.74).toNumber();
-        var barH = 8;
+        var barY = (h * 0.78).toNumber();
+        var barH = 10;
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
-        dc.fillRectangle(barX, barY, barW, barH);
+        dc.fillRoundedRectangle(barX, barY, barW, barH, barH / 2);
         var frac = _rolls.length().toFloat() / _needed;
         if (frac > 1.0) { frac = 1.0; }
-        dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
-        dc.fillRectangle(barX, barY, (barW * frac).toNumber(), barH);
+        if (frac > 0.0) {
+            var filledW = (barW * frac).toNumber();
+            if (filledW < barH) { filledW = barH; } // at least round end cap visible
+            dc.setColor(Graphics.COLOR_GREEN, Graphics.COLOR_TRANSPARENT);
+            dc.fillRoundedRectangle(barX, barY, filledW, barH, barH / 2);
+        }
 
-        // button labels next to the physical buttons
-        var back = (_rolls.length() > 0) ? "undo" : "back";
-        UiHints.draw(dc, {:up => "+1", :down => "-1", :start => "add", :back => back});
+        // Roll counter below the bar.
+        dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+        dc.drawText(w / 2, (h * 0.89).toNumber(), Graphics.FONT_XTINY,
+            _rolls.length() + " / " + _needed,
+            Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 }
 
@@ -100,22 +213,19 @@ class DiceEntryDelegate extends WatchUi.BehaviorDelegate {
         _view = view;
     }
 
-    // UP (onPreviousPage) increases the value, DOWN (onNextPage) decreases it.
     function onPreviousPage() as Boolean {
-        _view.incCandidate();
+        _view.incSelected();
         return true;
     }
 
     function onNextPage() as Boolean {
-        _view.decCandidate();
+        _view.decSelected();
         return true;
     }
 
     function onSelect() as Boolean {
         _view.commit();
-        if (_view.isComplete()) {
-            finish();
-        }
+        if (_view.isComplete()) { finish(); }
         return true;
     }
 
@@ -124,17 +234,34 @@ class DiceEntryDelegate extends WatchUi.BehaviorDelegate {
             _view.undo();
             return true;
         }
-        return false; // nothing entered yet -> let default pop the view
+        return false; // nothing entered yet → let default pop the view
     }
 
-    // Build the seed from the collected rolls and show the result. The entropy
-    // ByteArray stays a local and is dropped on return; no persistence/logging.
-    function finish() as Void {
-        var strengthBits = _view.getStrength();
-        var entropy = Bip39.mixEntropy(_view.getRolls(), strengthBits);
-        var words = Bip39.indicesToWords(Bip39.entropyToIndices(entropy));
+    // MENU (long BACK / LIGHT on most watches): exit immediately without undoing.
+    function onMenu() as Boolean {
+        WatchUi.popView(WatchUi.SLIDE_DOWN);
+        return true;
+    }
 
+    function onTap(clickEvent as WatchUi.ClickEvent) as Boolean {
+        var coords = clickEvent.getCoordinates();
+        var value = _view.dieValueAt(coords[0], coords[1]);
+        if (value > 0) {
+            _view.commitValue(value);
+            if (_view.isComplete()) { finish(); }
+            return true;
+        }
+        return false;
+    }
+
+    function resetSelf() as Void {
+        _view.reset();
+    }
+
+    function finish() as Void {
+        var entropy = Bip39.mixEntropy(_view.getRolls(), _view.getStrength());
+        var words = Bip39.indicesToWords(Bip39.entropyToIndices(entropy));
         var resultView = new SeedResultView(words);
-        WatchUi.pushView(resultView, new SeedResultDelegate(resultView, _view), WatchUi.SLIDE_UP);
+        WatchUi.pushView(resultView, new SeedResultDelegate(resultView, method(:resetSelf)), WatchUi.SLIDE_UP);
     }
 }

@@ -83,4 +83,15 @@ module Bip39 {
         var shift = 7 - (pos % 8);
         return (bytes[byteIndex] >> shift) & 1;
     }
+
+    // Like mixEntropy but accepts raw bytes instead of a dice-digit string.
+    // Used by the motion-entropy flow where the input is a SHA-256 digest.
+    function mixEntropyRaw(data as ByteArray, strengthBits as Number) as ByteArray {
+        var input = []b;
+        input.addAll(data);
+        input.addAll(Cryptography.randomBytes(32));
+        var hash = new Cryptography.Hash({:algorithm => Cryptography.HASH_SHA256});
+        hash.update(input);
+        return hash.digest().slice(0, strengthBits / 8);
+    }
 }

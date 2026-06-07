@@ -75,20 +75,24 @@ class DiceEntryView extends WatchUi.View {
         }
     }
 
-    // Returns the die value (1-6) under the tap coordinates, or 0 if none.
+    // Returns the die value (1-6) for a tap position, snapping to the nearest
+    // die cell so that taps in the gaps between dice still register correctly.
     function dieValueAt(tapX as Number, tapY as Number) as Number {
         if (_dieSize == 0) { return 0; }
-        for (var row = 0; row < 2; row++) {
-            for (var col = 0; col < 3; col++) {
-                var dx = _gridX + col * (_dieSize + _gap);
-                var dy = _gridY + row * (_dieSize + _gap);
-                if (tapX >= dx && tapX < dx + _dieSize &&
-                    tapY >= dy && tapY < dy + _dieSize) {
-                    return row * 3 + col + 1;
-                }
-            }
-        }
-        return 0;
+        var cellW = _dieSize + _gap;
+        var cellH = _dieSize + _gap;
+        var gridW = 3 * cellW - _gap;
+        var gridH = 2 * cellH - _gap;
+        var margin = _dieSize / 2; // generous hit tolerance outside the grid
+        var relX = tapX - _gridX;
+        var relY = tapY - _gridY;
+        if (relX < -margin || relX > gridW + margin) { return 0; }
+        if (relY < -margin || relY > gridH + margin) { return 0; }
+        var col = relX / cellW;
+        var row = relY / cellH;
+        if (col < 0) { col = 0; } if (col > 2) { col = 2; }
+        if (row < 0) { row = 0; } if (row > 1) { row = 1; }
+        return row * 3 + col + 1;
     }
 
     private function drawDots(dc as Graphics.Dc, cx as Number, cy as Number, spread as Number, dotR as Number, value as Number) as Void {

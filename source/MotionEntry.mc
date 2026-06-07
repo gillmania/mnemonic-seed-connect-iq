@@ -21,8 +21,12 @@ class MotionEntryView extends WatchUi.View {
     private var _timer as Timer.Timer?;
     private var _ballX as Float = 0.0;
     private var _ballY as Float = 0.0;
+    private var _vx as Float = 0.0;
+    private var _vy as Float = 0.0;
     private var _accelX as Number = 0;
     private var _accelY as Number = 0;
+    private var _prevAccelX as Number = 0;
+    private var _prevAccelY as Number = 0;
     private var _hasSensor as Boolean = false;
     private var _onComplete as Method?;
 
@@ -46,6 +50,10 @@ class MotionEntryView extends WatchUi.View {
         _sampleCount = 0;
         _ballX = 0.0;
         _ballY = 0.0;
+        _vx = 0.0;
+        _vy = 0.0;
+        _prevAccelX = 0;
+        _prevAccelY = 0;
         _hash = new Cryptography.Hash({:algorithm => Cryptography.HASH_SHA256});
         if (_timer != null) { _timer.stop(); }
         _timer = new Timer.Timer();
@@ -75,9 +83,16 @@ class MotionEntryView extends WatchUi.View {
             bytes[4] = z & 0xFF;
             bytes[5] = (z >> 8) & 0xFF;
 
-            // Ball position = X/Y gravity component (tilt = gravity on those axes).
-            _ballX = (_accelX * 0.04).toFloat();
-            _ballY = (-_accelY * 0.04).toFloat();
+            // Velocity-based ball: delta from previous sample → add to velocity → damp.
+            // Ball moves visibly when shaking and settles at centre when still.
+            var dx = (_accelX - _prevAccelX).toFloat();
+            var dy = (_accelY - _prevAccelY).toFloat();
+            _prevAccelX = _accelX;
+            _prevAccelY = _accelY;
+            _vx = (_vx + dx * 0.05) * 0.80;
+            _vy = (_vy - dy * 0.05) * 0.80;
+            _ballX += _vx;
+            _ballY += _vy;
         } else {
             // Simulator / sensor not ready: fall back to device RNG.
             var rand = Cryptography.randomBytes(6);

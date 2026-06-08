@@ -17,10 +17,9 @@ Open the app and select Generate seed. Choose either 12 words (128-bit) or
 24 words (256-bit). Then choose your entropy source.
 
 **Dice rolls:** A grid of six dice faces is shown on screen. Use UP and DOWN to
-cycle the highlighted die and press START to record that roll. On touch screens
-you can also tap a die directly to record it. You need around 50 rolls for a
-12-word phrase and around 100 for a 24-word phrase. A progress bar at the bottom
-shows how far along you are. BACK undoes the last roll.
+cycle the highlighted die and press START to record that roll. You need around
+50 rolls for a 12-word phrase and around 100 for a 24-word phrase. A progress bar
+at the bottom shows how far along you are. BACK undoes the last roll.
 
 **Shake watch:** Hold the watch and move your arm around for about five seconds.
 The accelerometer collects motion data as entropy. A rolling ball shows the live
@@ -42,10 +41,9 @@ has been cleared.
 
 ## Security
 
-You provide the randomness. Physical dice give entropy you can observe and verify
-yourself. The watch adds its own cryptographic randomness on top. Combining the
-two with SHA-256 means the result is at least as strong as whichever source you
-trust more.
+You provide part of the randomness. Physical dice give entropy you can observe
+yourself. The watch adds its own random bytes on top, and the two are combined
+with SHA-256 so the result reflects both inputs.
 
 No permissions other than the motion sensor are requested. The app has no network
 access and does not write anything to storage. The phrase is only ever shown on
@@ -57,12 +55,9 @@ https://github.com/gillmania/mnemonic-seed-connect-iq
 
 ## Wallet compatibility
 
-The output is a standard BIP-39 mnemonic phrase. It can be used to restore a
-wallet in MetaMask, Ledger, Trezor, Trust Wallet, BlueWallet, Sparrow, and most
-other hardware and software wallets that support 12 or 24 word phrases.
-
-In Electrum, choose the BIP39 seed option during wallet restore. Electrum will
-show a notice that it is not a native Electrum seed, which is expected.
+The output is a standard BIP-39 mnemonic phrase, so you can use it however you
+like. It follows the BIP-39 standard that a wide range of hardware and software
+wallets support for 12 or 24 word seeds.
 
 The app only generates the phrase. Key derivation and any passphrase are handled
 by your wallet software.
@@ -83,20 +78,12 @@ fenix 8 43mm, fenix 8 47mm, fenix 8 Solar 47mm, fenix 8 Solar 51mm, fenix E
 
 **Epix:** epix 2, epix 2 Pro 42mm, epix 2 Pro 47mm, epix 2 Pro 51mm
 
-**Instinct:** instinct 3 AMOLED 45mm, instinct 3 AMOLED 50mm,
-instinct 3 Solar 45mm, instinct E 40mm, instinct E 45mm
-
-**Venu / Vivoactive:** venu 3, venu 3S, venu X1, vivoactive 5, vivoactive 6
-
 **MARQ:** marq 2, marq 2 Aviator
-
-**D2 / Descent:** d2 Mach 1, Descent G2, Descent Mk3 43mm, Descent Mk3 51mm
-
-**Approach:** Approach S50, Approach S70 42mm, Approach S70 47mm
 
 **Enduro:** Enduro 3
 
-50 devices total.
+33 devices total. These all share the same five-button round layout. Support for
+other Garmin form factors may be added once tested.
 
 
 ## Install

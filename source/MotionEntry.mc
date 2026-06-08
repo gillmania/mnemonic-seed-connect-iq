@@ -39,7 +39,6 @@ class MotionEntryView extends WatchUi.View {
     private var _prevAccelX as Number = 0;
     private var _prevAccelY as Number = 0;
     private var _havePrev as Boolean = false;
-    private var _playR as Float = 1.0;
     private var _maxR as Float = 1.0;
 
     private var _accelX as Number = 0;  // latest sample, for the live readout
@@ -238,7 +237,6 @@ class MotionEntryView extends WatchUi.View {
         var playR = (w * 0.28).toNumber();
         var ballR = (w * 0.05).toNumber();
         if (ballR < 5) { ballR = 5; }
-        _playR = playR.toFloat();
         _maxR = (playR - ballR).toFloat();
 
         // Title

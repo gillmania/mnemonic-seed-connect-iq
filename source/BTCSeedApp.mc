@@ -19,7 +19,7 @@ class BTCSeedApp extends Application.AppBase {
     // Return the initial view of your application here.
     // The top-level menu is the initial view so that BACK on it exits the app.
     function getInitialView() as [Views] or [Views, InputDelegates] {
-        var menu = new WatchUi.Menu2({:title => "Mnemonic Seed"});
+        var menu = new WatchUi.Menu2({:title => "Mnemonic Seed " + Version.STRING});
         menu.addItem(new WatchUi.MenuItem("Generate seed", null, :generate, null));
         menu.addItem(new WatchUi.MenuItem("How it works", null, :info, null));
         return [ menu, new MainMenuDelegate() ];

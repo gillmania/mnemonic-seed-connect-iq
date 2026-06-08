@@ -23,6 +23,7 @@ class DiceEntryView extends WatchUi.View {
     private var _gap as Number = 0;
     private var _gridX as Number = 0;
     private var _gridY as Number = 0;
+    private var _barY as Number = 0;
 
     function initialize(strengthBits as Number) {
         View.initialize();
@@ -75,21 +76,17 @@ class DiceEntryView extends WatchUi.View {
         }
     }
 
-    // Returns the die value (1-6) for a tap position, snapping to the nearest
-    // die cell so that taps in the gaps between dice still register correctly.
+    // Returns the die value (1-6) for a tap position. Any tap above the bottom
+    // progress bar snaps to the nearest die cell (the whole upper screen is the
+    // dice grid — nothing else there is tappable), so taps in the gaps or just
+    // off a die still register. Taps on/below the bar return 0 (ignored).
     function dieValueAt(tapX as Number, tapY as Number) as Number {
         if (_dieSize == 0) { return 0; }
+        if (_barY > 0 && tapY >= _barY) { return 0; }
         var cellW = _dieSize + _gap;
         var cellH = _dieSize + _gap;
-        var gridW = 3 * cellW - _gap;
-        var gridH = 2 * cellH - _gap;
-        var margin = _dieSize / 2; // generous hit tolerance outside the grid
-        var relX = tapX - _gridX;
-        var relY = tapY - _gridY;
-        if (relX < -margin || relX > gridW + margin) { return 0; }
-        if (relY < -margin || relY > gridH + margin) { return 0; }
-        var col = relX / cellW;
-        var row = relY / cellH;
+        var col = (tapX - _gridX) / cellW;
+        var row = (tapY - _gridY) / cellH;
         if (col < 0) { col = 0; } if (col > 2) { col = 2; }
         if (row < 0) { row = 0; } if (row > 1) { row = 1; }
         return row * 3 + col + 1;
@@ -188,6 +185,7 @@ class DiceEntryView extends WatchUi.View {
         var barW = (w * 0.72).toNumber();
         var barX = (w - barW) / 2;
         var barY = (h * 0.78).toNumber();
+        _barY = barY; // cache for touch hit-testing (taps below here are ignored)
         var barH = 10;
         dc.setColor(Graphics.COLOR_DK_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.fillRoundedRectangle(barX, barY, barW, barH, barH / 2);
@@ -200,10 +198,11 @@ class DiceEntryView extends WatchUi.View {
             dc.fillRoundedRectangle(barX, barY, filledW, barH, barH / 2);
         }
 
-        // Roll counter below the bar.
+        // Roll counter below the bar, with the build version so a fresh
+        // sideload is verifiable on the watch.
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(w / 2, (h * 0.89).toNumber(), Graphics.FONT_XTINY,
-            _rolls.length() + " / " + _needed,
+            _rolls.length() + " / " + _needed + "   " + Version.STRING,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 }

@@ -181,6 +181,24 @@ class DiceEntryView extends WatchUi.View {
             }
         }
 
+        // Recent rolls header — the last few committed values, so the user gets
+        // clear feedback that each roll registered with the right value, no
+        // matter which die was highlighted or tapped. Sits in the safe centre
+        // zone above the grid (which is pushed down on round screens).
+        var n = _rolls.length();
+        if (n > 0) {
+            var startIdx = (n > 3) ? n - 3 : 0;
+            var recent = _rolls.substring(startIdx, n);
+            var spaced = "";
+            for (var i = 0; i < recent.length(); i++) {
+                if (i > 0) { spaced += "   "; }
+                spaced += recent.substring(i, i + 1);
+            }
+            dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, (h * 0.09).toNumber(), Graphics.FONT_SMALL, spaced,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
+
         // Progress bar — wider and taller so it's visible even at 1 roll.
         var barW = (w * 0.72).toNumber();
         var barX = (w - barW) / 2;
@@ -198,11 +216,10 @@ class DiceEntryView extends WatchUi.View {
             dc.fillRoundedRectangle(barX, barY, filledW, barH, barH / 2);
         }
 
-        // Roll counter below the bar, with the build version so a fresh
-        // sideload is verifiable on the watch.
+        // Roll counter below the bar.
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(w / 2, (h * 0.89).toNumber(), Graphics.FONT_XTINY,
-            _rolls.length() + " / " + _needed + "   " + Version.STRING,
+            _rolls.length() + " / " + _needed,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
     }
 }
@@ -226,10 +243,20 @@ class DiceEntryDelegate extends WatchUi.BehaviorDelegate {
         return true;
     }
 
-    function onSelect() as Boolean {
-        _view.commit();
-        if (_view.isComplete()) { finish(); }
-        return true;
+    // Handle the physical START button via onKey rather than onSelect. A
+    // BehaviorDelegate that implements onSelect causes screen taps to be
+    // delivered as the SELECT behavior, which suppresses onTap and its
+    // coordinates. By taking KEY_ENTER here and returning false for every
+    // other key, the START button still commits the highlighted die while
+    // taps reach onTap with real coordinates, and UP/DOWN/BACK are still
+    // translated into the BehaviorDelegate callbacks below.
+    function onKey(keyEvent as WatchUi.KeyEvent) as Boolean {
+        if (keyEvent.getKey() == WatchUi.KEY_ENTER) {
+            _view.commit();
+            if (_view.isComplete()) { finish(); }
+            return true;
+        }
+        return false;
     }
 
     function onBack() as Boolean {

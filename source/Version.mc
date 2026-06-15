@@ -4,5 +4,5 @@ import Toybox.Lang;
 // menu title and the entry screens so it's possible to confirm at a glance
 // that a freshly sideloaded build actually replaced the old one on the watch.
 module Version {
-    const STRING = "v1.4";
+    const STRING = "v2.0";
 }

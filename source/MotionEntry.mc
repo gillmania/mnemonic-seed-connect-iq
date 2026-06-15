@@ -260,10 +260,10 @@ class MotionEntryView extends WatchUi.View {
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         dc.fillCircle(cx + _ballX.toNumber(), cy + _ballY.toNumber(), ballR);
 
-        // Progress counter with build version.
+        // Progress counter.
         dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
         dc.drawText(cx, (h * 0.78).toNumber(), Graphics.FONT_XTINY,
-            _sampleCount + " / " + SAMPLES_NEEDED + "   " + Version.STRING,
+            _sampleCount + " / " + SAMPLES_NEEDED,
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
 
         // Progress bar (green)

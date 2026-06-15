@@ -55,12 +55,7 @@ class InfoView extends WatchUi.View {
             "no warranty. Check",
             "the phrase with an",
             "offline tool. You",
-            "keep it safe."],
-        ["Garmin watches",
-            "Forerunner 165-970,",
-            "Fenix 7 and 8,",
-            "Epix 2, MARQ 2,",
-            "Enduro 3."]
+            "keep it safe."]
     ];
     private var _page as Number = 0;
 
@@ -89,6 +84,14 @@ class InfoView extends WatchUi.View {
         dc.drawText(w / 2, (h * 0.12).toNumber(), Graphics.FONT_XTINY,
             page[0] + "  " + (_page + 1) + "/" + _pages.size(),
             Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+
+        // Build version, shown on the first page so a fresh sideload is
+        // verifiable without cluttering the entry screens.
+        if (_page == 0) {
+            dc.setColor(Graphics.COLOR_LT_GRAY, Graphics.COLOR_TRANSPARENT);
+            dc.drawText(w / 2, (h * 0.19).toNumber(), Graphics.FONT_XTINY, Version.STRING,
+                Graphics.TEXT_JUSTIFY_CENTER | Graphics.TEXT_JUSTIFY_VCENTER);
+        }
 
         dc.setColor(Graphics.COLOR_WHITE, Graphics.COLOR_TRANSPARENT);
         var y = h * 0.26;
